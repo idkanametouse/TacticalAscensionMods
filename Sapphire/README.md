@@ -1,1 +1,1 @@
-THIS VERSION OF SAPPHIRE IS UNFINISHED! Drop the Sapphire.CSS and the Sapphire.JS aswell as the index.html into the main folder and it should be properly set up. Make sure to get rid of the old index, unless you use SapphLib
+THIS VERSION OF SAPPHIRE IS UNFINISHED! Drop the Sapphire.CSS and the Sapphire.JS aswell as the index.html into the main folder and it should be properly set up. Make sure to get rid of the old index, unless you use SapphLib. For version 0.8 beta.
