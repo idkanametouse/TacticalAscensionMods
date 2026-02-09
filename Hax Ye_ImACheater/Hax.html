@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Ye_ImACheater</title>
+<style>
+  :root { --ui-bg: rgba(0,0,0,0.95); --ui-border:#444; --accent:#ECFF0C; --shield:#00ccff; }
+  html,body{height:100%}
+  body{
+    margin:0;padding:0;overflow:hidden;background:#050505;color:#fff;
+    font-family: "Courier New", monospace;
+    transition:background .3s;
+    user-select: none;
+  }
+  canvas{display:block}
+  #ui,#menu,#game-over,#victory,#settings{position:absolute;text-shadow:2px 2px #000}
+  #ui{top:18px;left:18px;width:380px;pointer-events:none}
+  #player-hp {margin-top:6px;font-size:14px}
+  .hp-bar {width:240px;height:12px;background:#111;border:1px solid #333;display:inline-block;vertical-align:middle}
+  .hp-fill {height:100%;background:#ff4d4d;width:100%;transition: width 0.1s;}
+  .shield-fill {height:100%;background:var(--shield);width:100%;transition: width 0.1s;}
+  .ability-slot{display:inline-block;width:120px;margin-right:10px}
+  .cooldown-bg{width:100%;height:7px;background:#333;border:1px solid #555;margin-top:4px}
+  .cooldown-fill{height:100%;background:#00ffff;width:100%}
+  .muted{color:#888;font-size:12px}
+  #timer-container{position:absolute;top:18px;right:18px;font-size:20px;color:#00ff00;display:none}
+  #boss-ui{position:absolute;top:68px;left:50%;transform:translateX(-50%);width:60%;display:none}
+  #boss-bar-bg{width:100%;height:12px;background:#222;border:1px solid #fff}
+  #boss-bar-fill{width:100%;height:100%;background:#ff0000;transition:width .2s}
+  #menu,#game-over,#victory{top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;background:var(--ui-bg);padding:26px;border:1px solid var(--ui-border);width:700px;z-index:1000}
+  .difficulty-row{display:flex;gap:8px;margin-bottom:12px}
+  .diff-btn{flex:1;padding:8px;background:#111;border:1px solid var(--ui-border);color:#999;cursor:pointer}
+  .diff-btn.active{background:#222;color:#fff;border-color:#fff}
+  .btn{display:block;width:100%;padding:10px;margin:6px 0;background:#111;border:1px solid var(--ui-border);cursor:pointer;color:#fff;font-size:14px}
+  .btn:hover{background:#fff;color:#000}
+  .btn.locked { color: #555; border-style: dashed; }
+  .btn.locked:hover { background: #222; color: #777; }
+  #crosshair{position:absolute;width:24px;height:24px;border:2px solid rgba(255,255,255,0.6);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:2000}
+  #crosshair::after{content:''; position:absolute; top:50%; left:50%; width:2px; height:2px; background:#fff; transform:translate(-50%,-50%)}
+  #reload-msg{position:absolute;bottom:20%;left:50%;transform:translateX(-50%);color:#ffcc00;display:none;font-weight:bold;font-size:24px}
+  
+  #settings{top:50%;left:50%;transform:translate(-50%,-50%);width:600px;max-height:80vh;overflow-y:auto;background:var(--ui-bg);border:1px solid var(--ui-border);padding:24px;z-index:1100;display:none}
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+  .settings-group { border-bottom: 1px solid #333; padding-bottom: 10px; }
+  label{display:block;font-size:13px;color:#ddd;margin-bottom:6px; display: flex; align-items: center; justify-content: space-between;}
+  input[type="range"] { width: 100px; accent-color: var(--accent); }
+  input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+  select { background: #111; color: #fff; border: 1px solid #444; padding: 4px; }
+
+  #combo-ui { position: absolute; bottom: 18px; right: 18px; text-align: right; pointer-events: none; }
+  #combo-count { font-size: 48px; color: var(--accent); font-weight: bold; margin: 0; }
+  #combo-label { font-size: 14px; color: #aaa; margin: 0; }
+  #combo-bonus-msg { font-size: 12px; color: #00ff00; margin: 0; opacity: 0; transition: opacity 0.3s; }
+  
+  .weapon-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  #level-banner { position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); font-size: 42px; color: var(--accent); font-weight: bold; display: none; z-index: 500; text-align: center; }
+  #credits-display { color: var(--accent); font-weight: bold; margin-bottom: 10px; font-size: 18px; }
+  #xp-bar-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: #111; }
+  #xp-fill { height: 100%; background: #ecff0c; width: 0%; transition: width 0.3s; }
+
+  /* Cheat UI specific */
+  #cheat-ui { font-size:13px; }
+  #cheat-ui .small { font-size:11px; color:#bbb; margin-left:6px; }
+  #cheat-ui input[type="number"] { width:80px; background:#111; color:#fff; border:1px solid #333; padding:4px; }
+  #cheat-ui .row { display:flex; gap:6px; align-items:center; margin:6px 0; }
+  #cheat-ui input[type="range"]{width:120px}
+  #dev-chat-log { height:120px; overflow:auto; background:#080808; border:1px solid #333; padding:8px; font-size:12px; color:#ddd; }
+  #dev-chat-input { width:100%; padding:6px; background:#111; color:#fff; border:1px solid #333; }
+  .hotkey-note{ font-size:11px;color:#aaa;margin-top:6px }
+</style>
+</head>
+<body>
+<div id="crosshair"></div>
+<div id="reload-msg">RELOADING...</div>
+<div id="level-banner">LEVEL 1</div>
+<div id="xp-bar-container"><div id="xp-fill"></div></div>
+
+<div id="menu">
+  <h1 style="letter-spacing:8px">YE ASCENSION: OVERDRIVE (MODDED)</h1>
+  <p style="color:#aaa;font-size:13px;margin-bottom:8px">DEV: ApollonGorilla | MODDED: Hax Menu</p>
+
+  <div id="credits-display">CREDITS: 0</div>
+
+  <div style="font-size:12px;margin-bottom:6px;color:#aaa">DIFFICULTY</div>
+  <div class="difficulty-row">
+    <button class="diff-btn" id="diff-very" onclick="setDiff('very')">VERY EASY</button>
+    <button class="diff-btn" id="diff-easy" onclick="setDiff('easy')">EASY</button>
+    <button class="diff-btn active" id="diff-norm" onclick="setDiff('norm')">NORMAL</button>
+    <button class="diff-btn" id="diff-hard" onclick="setDiff('hard')">HARD</button>
+    <button class="diff-btn" id="diff-night" onclick="setDiff('night')">NIGHTMARE</button>
+    <button class="diff-btn" id="diff-insane" onclick="setDiff('insane')">INSANE</button>
+  </div>
+
+  <div class="weapon-grid" id="weapon-buttons"></div>
+  <button class="btn" id="btn-KNIFE" onclick="handleWeaponClick('KNIFE')" style="width:100%">CLASSIC KNIFE + PISTOL (FREE)</button>
+
+  <button class="btn" onclick="openSettings()" style="margin-top:12px">SETTINGS (P)</button>
+</div>
+
+<div id="ui" style="display:none">
+  <div style="display:flex; justify-content:space-between; width: 380px;">
+    <div id="mode-display" style="font-weight:bold;font-size:18px">P90</div>
+    <div id="level-display" style="font-weight:bold;font-size:18px;color:var(--accent)">LEVEL 1</div>
+  </div>
+  <div id="difficulty-display" style="font-size:12px;color:#aaa">DIFFICULTY: NORM</div>
+  <div class="muted">SECONDARY: <span id="secondary-text"></span></div>
+
+  <div id="player-hp">
+    HP: <div class="hp-bar inline"><div id="hp-fill" class="hp-fill"></div></div>
+    <span id="hp-text" class="muted" style="margin-left:10px">100/100</span>
+  </div>
+  <div id="player-shield" style="margin-top:2px">
+    SH: <div class="hp-bar inline"><div id="shield-fill" class="shield-fill"></div></div>
+  </div>
+
+  <div style="margin-top:8px">SCORE: <span id="score">0</span> | RUN LVL: <span id="run-lvl">1</span></div>
+  <div style="font-size:14px; color:var(--accent)">CREDITS: <span id="hud-credits">0</span></div>
+  <div id="ammo-ui" style="margin-top:6px">AMMO: <span id="ammo-count">50</span> / <span id="ammo-max">50</span></div>
+
+  <div style="margin-top:8px" id="abilities">
+    <div class="ability-slot">SKILL (F): <div id="skill-name" class="muted">BURST</div> <div class="cooldown-bg"><div id="cd-ability" class="cooldown-fill"></div></div></div>
+    <div class="ability-slot">DASH (SPACE): <div class="cooldown-bg"><div id="cd-dash" class="cooldown-fill" style="background:#ecff0c"></div></div></div>
+    <div class="ability-slot">GRENADE (G): <div class="cooldown-bg"><div id="cd-grenade" class="cooldown-fill" style="background:#ff8800"></div></div></div>
+  </div>
+</div>
+
+<div id="combo-ui" style="display:none">
+    <p id="combo-bonus-msg">COMBO MILESTONE! +50</p>
+    <p id="combo-count">0</p>
+    <p id="combo-label">COMBO</p>
+</div>
+
+<div id="boss-ui" style="display:none">
+  <div id="boss-name">BOSS</div>
+  <div id="boss-bar-bg"><div id="boss-bar-fill"></div></div>
+</div>
+
+<div id="timer-container" style="display:none">0.00</div>
+
+<div id="game-over" style="display:none">
+  <h1 style="color:red">SYSTEM CRASH</h1>
+  <p>SCORE: <span id="final-score">0</span></p>
+  <p style="color:var(--accent)">EARNED CREDITS: <span id="earned-credits-death">0</span></p>
+  <button class="btn" onclick="location.reload()">REBOOT</button>
+</div>
+
+<div id="victory" style="display:none">
+  <h1 style="color:gold">ASCENDED</h1>
+  <p>FINAL TIME: <span id="victory-time">0</span></p>
+  <p style="color:var(--accent)">EARNED CREDITS: <span id="earned-credits-win">0</span></p>
+  <button class="btn" onclick="location.reload()">PLAY AGAIN</button>
+</div>
+
+<div id="settings">
+  <h2 style="margin-top:0; border-bottom: 2px solid var(--accent); padding-bottom: 5px;">SYSTEM PREFERENCES</h2>
+  
+  <div class="settings-grid">
+    <div class="settings-group">
+        <label>Theme
+            <select id="bg-select">
+                <option value="dark">Dark</option>
+                <option value="space">Space</option>
+                <option value="grid">Grid</option>
+                <option value="neon">Neon</option>
+                <option value="sunset">Sunset</option>
+            </select>
+        </label>
+        <label>Volume <input type="range" id="volume-slider" min="0" max="100" value="50"></label>
+        <label>Screen Shake <input type="range" id="shake-slider" min="0" max="200" value="100"></label>
+    </div>
+
+    <div class="settings-group">
+        <label>Crosshair Color <input type="color" id="crosshair-color" value="#ffffff"></label>
+        <label>Crosshair Size <input type="range" id="crosshair-size" min="10" max="50" value="24"></label>
+        <label>UI Scale <input type="range" id="ui-scale" min="80" max="150" value="100"></label>
+    </div>
+
+    <div class="settings-group">
+        <label>Show Crosshair <input type="checkbox" id="crosshair-toggle" checked /></label>
+        <label>Auto-Reload <input type="checkbox" id="auto-reload-toggle" checked /></label>
+        <label>Damage Numbers <input type="checkbox" id="damage-numbers-toggle" checked /></label>
+    </div>
+
+    <div class="settings-group">
+        <label>Speedrun Timer <input type="checkbox" id="timer-toggle" /></label>
+        <label>Player HP Bar <input type="checkbox" id="hp-toggle" checked /></label>
+        <label>Enemy HP Bars <input type="checkbox" id="enemy-hp-toggle" checked /></label>
+    </div>
+  </div>
+
+  <div class="settings-actions">
+    <button class="btn" onclick="applySettings()" style="background: #222;">SAVE & APPLY</button>
+    <button class="btn" onclick="leaveRun()" style="color: #ff4d4d;">LEAVE RUN</button>
+    <button class="btn" onclick="closeSettings()">CLOSE</button>
+  </div>
+</div>
+
+<!-- ===== CHEAT UI (EXTENDED) ===== -->
+<div id="cheat-ui" style="
+  position:absolute;
+  bottom:18px;
+  left:18px;
+  width:420px;
+  background:rgba(0,0,0,0.95);
+  border:1px solid #ECFF0C;
+  padding:12px;
+  display:none;
+  z-index:3000;
+  font-size:12px;
+">
+  <div style="font-weight:bold;color:#ECFF0C;margin-bottom:8px;">
+    HAX (H)
+  </div>
+
+  <!-- row 1: core toggles -->
+  <div class="row">
+    <label><input type="checkbox" id="cheat-god"> Godmode</label>
+    <label style="margin-left:6px"><input type="checkbox" id="cheat-inf-health"> Inf Health</label>
+  </div>
+
+  <div class="row">
+    <label><input type="checkbox" id="cheat-inf-shield"> Inf Shield</label>
+    <label style="margin-left:6px"><input type="checkbox" id="cheat-ammo"> Inf Ammo</label>
+  </div>
+
+  <div class="row">
+    <label><input type="checkbox" id="cheat-nocd"> No Cooldowns</label>
+    <label style="margin-left:6px"><input type="checkbox" id="cheat-oneshot"> One-Shot</label>
+  </div>
+
+  <!-- kill aura and damage -->
+  <div class="row">
+    <label><input type="checkbox" id="cheat-killaura"> Kill Aura</label>
+    <input type="number" id="killaura-dps" value="800" min="1" class="small" title="DPS">
+    <label style="margin-left:6px"><input type="checkbox" id="cheat-damage"> Damage Mult</label>
+    <input type="number" id="damage-mult" value="3" min="0.1" step="0.1" class="small">
+  </div>
+
+  <!-- speed, time scale, freeze, magnet -->
+  <div class="row">
+    <label><input type="checkbox" id="cheat-speed"> Speed Mult</label>
+    <input type="number" id="speed-mult" value="2" min="0.1" step="0.1" class="small">
+    <label style="margin-left:6px"><input type="checkbox" id="cheat-slowmo"> Slow-mo</label>
+    <input type="range" id="timescale" min="0.1" max="2" value="1" step="0.1" class="small">
+  </div>
+
+  <div class="row">
+    <label><input type="checkbox" id="cheat-freeze-enemies"> Freeze Enemies</label>
+    <label style="margin-left:6px"><input type="checkbox" id="cheat-magnet"> Enemy Magnet</label>
+  </div>
+
+  <!-- ghost/size/tp/jump -->
+  <div class="row">
+    <label><input type="checkbox" id="cheat-ghost"> Ghost Mode</label>
+    <label style="margin-left:6px">Player Size <input type="range" id="player-scale" min="0.5" max="4" value="1" step="0.1"></label>
+  </div>
+
+  <div class="row">
+    <button class="btn" style="font-size:12px" onclick="teleportToCursor()">Teleport To Cursor (T)</button>
+    <button class="btn" style="margin-left:6px;font-size:12px" onclick="superJump()">Super Jump (J)</button>
+  </div>
+
+  <!-- turret helper / clone -->
+  <div class="row">
+    <label><input type="checkbox" id="cheat-turret"> Turret Helper</label>
+    <label style="margin-left:6px"><input type="checkbox" id="cheat-instant-drops"> Instant Drops</label>
+  </div>
+
+  <!-- spawn & wave controls -->
+  <div class="row">
+    <select id="spawn-enemy-type" style="flex:1;">
+      <option value="normal">Normal</option>
+      <option value="runner">Runner</option>
+      <option value="tank">Tank</option>
+      <option value="phantom">Phantom</option>
+      <option value="bomber">Bomber</option>
+      <option value="shooter">Shooter</option>
+      <option value="splitter">Splitter</option>
+      <option value="mini">Sentinel (mini boss)</option>
+      <option value="mid">Core (mid boss)</option>
+      <option value="final">Overseer (final boss)</option>
+    </select>
+    <button class="btn" style="margin-left:6px;font-size:12px" onclick="spawnEnemyAtPlayer()">Spawn</button>
+  </div>
+
+  <div class="row">
+    <input id="spawn-wave-count" type="number" value="10" min="1" class="small">
+    <button class="btn" style="font-size:12px" onclick="spawnWave()">Spawn Wave (U)</button>
+    <button class="btn" style="margin-left:6px;font-size:12px" onclick="disableEnemyAI()">Toggle Enemy AI</button>
+  </div>
+
+  <!-- weapons / economy tools -->
+  <div class="row">
+    <select id="give-weapon-select" style="flex:1;"></select>
+    <button class="btn" style="margin-left:6px;font-size:12px" onclick="giveWeapon(document.getElementById('give-weapon-select').value)">Give</button>
+  </div>
+
+  <div class="row">
+    <input type="number" id="credits-amt" value="50000" min="0" class="small">
+    <button class="btn" style="flex:1;margin-left:6px;font-size:12px" onclick="giveCredits(parseInt(document.getElementById('credits-amt').value||0))">Give Credits (L)</button>
+  </div>
+
+  <div class="row">
+    <button class="btn" style="font-size:12px" onclick="unlockEverything()">Unlock All (Y)</button>
+    <button class="btn" style="margin-left:6px;font-size:12px" onclick="killAllEnemies()">Kill All (K)</button>
+  </div>
+
+  <div class="row">
+    <button class="btn" style="font-size:12px" onclick="clearSaveData()">Clear Save</button>
+    <button class="btn" style="margin-left:6px;font-size:12px" onclick="resetRun()">Reset Run</button>
+  </div>
+
+  <!-- advanced modifiers -->
+  <div class="row">
+    <label>Enemy Speed Mult<input id="enemy-speed-mult" type="number" value="1" step="0.1" class="small"></label>
+    <label style="margin-left:6px">Spawn Rate Mult<input id="spawn-rate-mult" type="number" value="1" step="0.1" class="small"></label>
+  </div>
+
+  <!-- dev chat / console -->
+  <div style="margin-top:8px;">
+    <div style="font-weight:bold;color:#aaa;margin-bottom:6px">DEV CHAT & CONSOLE</div>
+    <div id="dev-chat-log"></div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <input id="dev-chat-input" placeholder="Type message or /command (e.g. /spawn wave 50, /setcredits 99999, /setdiff hard)" />
+      <button class="btn" style="width:90px;flex-shrink:0" onclick="sendDevChat()">Send</button>
+    </div>
+    <div class="hotkey-note">Hotkeys: H toggle cheat UI, T teleport, J super-jump, K kill-all, L give credits, U spawn wave, Y unlock all, O toggle godmode, M toggle magnet</div>
+  </div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+/* ---------------------------
+   game + cheats (mega)
+   --------------------------- */
+
+/* ---- existing settings & data (unchanged) ---- */
+const SETTINGS = {
+  theme: localStorage.getItem('yta_theme') || 'dark',
+  crosshair: localStorage.getItem('yta_cross') !== 'false',
+  timer: localStorage.getItem('yta_timer') === 'true',
+  showHP: localStorage.getItem('yta_hp') !== 'false',
+  showEnemyHP: localStorage.getItem('yta_enemy_hp') !== 'false',
+  sounds: localStorage.getItem('yta_snd') !== 'false',
+  autoReload: localStorage.getItem('yta_auto_reload') !== 'false',
+  damageNumbers: localStorage.getItem('yta_dmg_nums') !== 'false',
+  volume: parseInt(localStorage.getItem('yta_vol')) || 50,
+  shake: parseInt(localStorage.getItem('yta_shake')) || 100,
+  crossColor: localStorage.getItem('yta_cross_color') || '#ffffff',
+  crossSize: parseInt(localStorage.getItem('yta_cross_size')) || 24,
+  uiScale: parseInt(localStorage.getItem('yta_ui_scale')) || 100
+};
+
+const DIFF_SETTINGS = {
+  very: { speedMult:0.7, hpMult:0.5, spawnRate:140, bossMult:0.8 },
+  easy: { speedMult:0.85, hpMult:0.75, spawnRate:120, bossMult:1.2 },
+  norm: { speedMult:1.0, hpMult:1.0, spawnRate:90, bossMult:1.8 },
+  hard: { speedMult:1.3, hpMult:1.5, spawnRate:65, bossMult:2.5 },
+  night:{ speedMult:1.5, hpMult:2.2, spawnRate:45, bossMult:3.5 },
+  insane:{ speedMult:1.8, hpMult:3.5, spawnRate:32, bossMult:5.0 }
+};
+
+const WEAPONS = {
+  P90: { name:'P90', maxAmmo:50, reloadTime:1200, fireRate:90, damage:18, speed:20, secondary: 'PISTOL', price: 500, ability: "OVERDRIVE", cd: 8000 },
+  PISTOL: { name:'Pistol', maxAmmo:12, reloadTime:800, fireRate:250, damage:45, speed:22, ability: "FAN HAMMER", cd: 4000 },
+  KNIFE: { name:'Knife', maxAmmo:Infinity, reloadTime:0, fireRate:400, damage:400, speed:15, life:8, isMelee: true, price: 0, ability: "BLADE WHIRL", cd: 5000 },
+  BOW: { name:'Longbow', maxAmmo:1, reloadTime:1100, fireRate:9999, damage:750, speed:35, secondary:'KNIFE', price: 800, ability: "ARROW RAIN", cd: 10000 },
+  ENERGY: { name:'Pulse Rifle', maxAmmo:Infinity, reloadTime:0, fireRate:60, damage:14, speed:38, secondary:'PISTOL', price: 1200, ability: "STATIC DISCHARGE", cd: 7000 },
+  SHOTGUN: { name:'Shotgun', maxAmmo:8, reloadTime:1800, fireRate:600, damage:35, speed:18, pellets:8, spread:0.45, secondary:'PISTOL', price: 1500, ability: "DRAGON BREATH", cd: 6000 },
+  REVOLVER: { name:'Magnum', maxAmmo:6, reloadTime:1500, fireRate:450, damage:220, speed:28, secondary:'KNIFE', price: 2000, ability: "DEAD EYE", cd: 12000 },
+  CROSSBOW: { name:'Crossbow', maxAmmo:5, reloadTime:2000, fireRate:350, damage:280, speed:35, secondary:'KNIFE', price: 2200, ability: "TRIPLE BOLT", cd: 5000 },
+  SNIPER: { name:'Sniper', maxAmmo:5, reloadTime:2500, fireRate:1000, damage:950, speed:55, pierce:3, secondary:'PISTOL', price: 2800, ability: "VOID PIERCE", cd: 9000 },
+  FLAME: { name:'Flamethrower', maxAmmo:200, reloadTime:2500, fireRate:30, damage:15, speed:14, range:250, secondary:'KNIFE', price: 3500, ability: "INFERNO RING", cd: 8000 },
+  RAILGUN: { name:'Railgun', maxAmmo:1, reloadTime:4500, fireRate:9999, damage:3500, speed:65, pierce:6, secondary:'PISTOL', price: 5500, ability: "ORBITAL BEAM", cd: 15000 },
+  KATANA: { name:'Katana', maxAmmo:Infinity, reloadTime:0, fireRate:220, damage:1500, speed:22, life:12, isMelee: true, radius: 110, secondary: 'KNIFE', price: 7500, ability: "JUDGEMENT CUT", cd: 10000 },
+  MINIGUN: { name:'Minigun', maxAmmo:300, reloadTime:3500, fireRate:25, damage:28, speed:25, moveSlow: 0.65, secondary:'PISTOL', price: 9000, ability: "RAMPAGE", cd: 14000 },
+  PLASMA: { name:'Plasma Caster', maxAmmo:40, reloadTime:2000, fireRate:150, damage:450, speed:20, isPlasma: true, secondary: 'ENERGY', price: 12500, ability: "SINGULARITY", cd: 18000 }
+};
+
+const LEVEL_DATA = [
+  { level: 1, enemies: ['normal'], bossName: 'THE SENTINEL', bossType: 'mini', waves: 10, enemiesPerWave: 15 },
+  { level: 2, enemies: ['runner', 'tank'], bossName: 'THE CORE', bossType: 'mid', waves: 12, enemiesPerWave: 20 },
+  { level: 3, enemies: ['phantom', 'tank'], bossName: 'THE HARBINGER', bossType: 'harbinger', waves: 15, enemiesPerWave: 25 },
+  { level: 4, enemies: ['runner', 'tank', 'phantom', 'bomber'], bossName: 'THE OVERSEER', bossType: 'final', waves: 18, enemiesPerWave: 30 },
+  { level: 5, enemies: ['phantom', 'bomber', 'shooter'], bossName: 'THE ARCHITECT', bossType: 'architect', waves: 20, enemiesPerWave: 35 },
+  { level: 6, enemies: ['tank', 'bomber', 'shooter'], bossName: 'THE SINGULARITY', bossType: 'god', waves: 25, enemiesPerWave: 45 }
+];
+
+let credits = parseInt(localStorage.getItem('yta_credits')) || 0;
+let sessionEarned = 0;
+let unlockedWeapons = JSON.parse(localStorage.getItem('yta_unlocked')) || ['KNIFE'];
+
+function saveEconomy() {
+    localStorage.setItem('yta_credits', credits);
+    localStorage.setItem('yta_unlocked', JSON.stringify(unlockedWeapons));
+}
+
+/* UI hooks */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const ui = document.getElementById('ui');
+const menu = document.getElementById('menu');
+const settingsEl = document.getElementById('settings');
+const timerEl = document.getElementById('timer-container');
+const scoreEl = document.getElementById('score');
+const hudCreditsEl = document.getElementById('hud-credits');
+const ammoEl = document.getElementById('ammo-count');
+const ammoMaxEl = document.getElementById('ammo-max');
+const hpFill = document.getElementById('hp-fill');
+const hpText = document.getElementById('hp-text');
+const shieldFill = document.getElementById('shield-fill');
+const bossUi = document.getElementById('boss-ui');
+const bossBar = document.getElementById('boss-bar-fill');
+const bossName = document.getElementById('boss-name');
+const comboUi = document.getElementById('combo-ui');
+const comboCountEl = document.getElementById('combo-count');
+const comboBonusMsg = document.getElementById('combo-bonus-msg');
+const levelDisplay = document.getElementById('level-display');
+const levelBanner = document.getElementById('level-banner');
+const xpFill = document.getElementById('xp-fill');
+const devChatLog = document.getElementById('dev-chat-log');
+const devChatInput = document.getElementById('dev-chat-input');
+
+let difficulty = 'norm';
+let gameState = 'MENU';
+let currentMode = 'P90';
+let currentWeapon = 'P90';
+let weaponAmmo = {}; 
+let score = 0;
+let combo = 0;
+let comboTimer = 0;
+let startTime = 0;
+let keys = {};
+let mousePos = {x:0, y:0};
+let isShooting=false, lastAttack=0, frame=0;
+let isReloading=false;
+let reloadTimeout = null;
+let reloadStartTime = 0;
+let animationId = null;
+let screenShake = 0;
+
+let currentLevelIdx = 0;
+let currentWave = 1;
+let waveSpawnedCount = 0;
+let levelBossSpawned = false;
+
+let player = { 
+    x:0, y:0, radius:18, speed:5.5, lunge:0, 
+    maxHP:100, hp:100, 
+    maxShield: 50, shield: 50,
+    invuln: 0,
+    xp: 0, nextXp: 1000, runLevel: 1
+};
+
+let abilityState = {
+  dash: { cooldown: 0, max: 2200 },
+  grenade: { cooldown: 0, max: 5500 },
+  weaponAbility: { cooldown: 0, max: 8000, active: false, duration: 4000 }
+};
+
+const enemies = [];
+const attacks = [];
+const enemyAttacks = [];
+const drops = [];
+const damageTexts = [];
+
+/* turret helpers (for "clone/turret") */
+const helpers = []; // each helper {x,y,cooldown}
+
+/* boss flag */
+let bossActive = false;
+
+/* audio */
+const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
+function playTone(freq=440, dur=0.05, type='sine', vol=0.02){
+  if(!audioCtx || SETTINGS.volume <= 0) return;
+  try {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.value = vol * (SETTINGS.volume / 100);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+dur);
+  } catch(e) {}
+}
+
+/* canvas sizing */
+function resize(){ 
+    canvas.width = window.innerWidth; 
+    canvas.height = window.innerHeight; 
+}
+window.addEventListener('resize', resize); resize();
+
+/* --------------------------------
+   Fix: setDiff implementation
+   (ensures difficulty buttons work)
+   -------------------------------- */
+function setDiff(d){
+  if(!DIFF_SETTINGS[d]) return;
+  difficulty = d;
+  // update buttons visual
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('diff-'+d);
+  if(el) el.classList.add('active');
+  // update display
+  document.getElementById('difficulty-display').innerText = 'DIFFICULTY: ' + d.toUpperCase();
+  document.getElementById('difficulty-display').style.color = '#aaa';
+  playTone(700, 0.06, 'sine', 0.03);
+  // if running, adjust certain live stats to reflect difficulty change
+  if(gameState === 'PLAYING'){
+    player.maxHP = Math.max(10, Math.round(100 * DIFF_SETTINGS[d].hpMult));
+    player.hp = Math.min(player.maxHP, player.hp);
+    // adjust spawn behaviour by resetting wave counters to apply new rates
+    waveSpawnedCount = 0;
+  }
+}
+
+/* ---- basic UI/menu functions (unchanged but robust) ---- */
+function updateMenuUI() {
+    document.getElementById('credits-display').innerText = `CREDITS: ${credits}`;
+    const grid = document.getElementById('weapon-buttons');
+    grid.innerHTML = '';
+    
+    Object.keys(WEAPONS).forEach(key => {
+        if (key === 'KNIFE' || key === 'PISTOL') return;
+        const w = WEAPONS[key];
+        const isUnlocked = unlockedWeapons.includes(key);
+        const btn = document.createElement('button');
+        btn.className = 'btn' + (isUnlocked ? '' : ' locked');
+        btn.innerText = isUnlocked ? w.name : `${w.name} (${w.price})`;
+        btn.onclick = () => handleWeaponClick(key);
+        if (key === 'MINIGUN') btn.style.color = '#00ffff';
+        if (key === 'KATANA') btn.style.color = '#ff4d4d';
+        if (key === 'PLASMA') btn.style.color = '#ecff0c';
+        grid.appendChild(btn);
+    });
+    populateCheatWeaponSelect();
+}
+
+function handleWeaponClick(key) {
+    const w = WEAPONS[key];
+    if (unlockedWeapons.includes(key)) {
+        startGame(key);
+    } else {
+        if (credits >= w.price) {
+            credits -= w.price;
+            unlockedWeapons.push(key);
+            saveEconomy();
+            updateMenuUI();
+            playTone(1200, 0.2, 'sine', 0.05);
+        } else {
+            playTone(150, 0.1, 'sawtooth', 0.05);
+        }
+    }
+}
+
+function calculatePayout() {
+    const levelBonus = (currentLevelIdx) * 500;
+    const scorePayout = Math.floor(score / 15);
+    const totalEarned = scorePayout + levelBonus + sessionEarned;
+    credits += totalEarned;
+    saveEconomy();
+    return totalEarned;
+}
+
+/* input handling and H key for cheat UI + hotkeys */
+window.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    keys[k] = true;
+    if (k === 'p') openSettings();
+    if (k === 'h') {
+      const cheatUI = document.getElementById("cheat-ui");
+      cheatUI.style.display = (cheatUI.style.display === "none") ? "block" : "none";
+      syncCheats();
+    }
+    if (k === 't') teleportToCursor();
+    if (k === 'j') superJump();
+    if (k === 'k') killAllEnemies();
+    if (k === 'l') giveCredits(parseInt(document.getElementById('credits-amt').value||50000));
+    if (k === 'y') unlockEverything();
+    if (k === 'u') spawnWave();
+    if (k === 'o') { document.getElementById('cheat-god').checked = !document.getElementById('cheat-god').checked; syncCheats(); }
+    if (k === 'm') { document.getElementById('cheat-magnet').checked = !document.getElementById('cheat-magnet').checked; syncCheats(); }
+    if (e.key === 'Escape') closeSettings();
+    if (gameState !== 'PLAYING') return;
+    if (k === 'r') startReload();
+    if (k === 'q') swapWeapon();
+    if (k === 'f') tryUseAbility();
+    if (k === ' ') tryDash();
+    if (k === 'g') tryGrenade();
+});
+
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+window.addEventListener('wheel', e => {
+    if (gameState === 'PLAYING') swapWeapon();
+});
+window.addEventListener('mousemove', e => { 
+    mousePos.x = e.clientX; mousePos.y = e.clientY; 
+    const cross = document.getElementById('crosshair'); 
+    if(cross) { cross.style.left = e.clientX + 'px'; cross.style.top = e.clientY + 'px'; }
+});
+window.addEventListener('mousedown', () => isShooting = true);
+window.addEventListener('mouseup', () => isShooting = false);
+
+/* basic weapon / reload / ability functions (unchanged) */
+function swapWeapon() {
+    if (isReloading) cancelReload();
+    const weaponData = WEAPONS[currentWeapon];
+    let next;
+    if (weaponData.secondary) next = weaponData.secondary;
+    else if (currentWeapon === 'KNIFE') next = 'PISTOL';
+    else next = currentMode;
+    currentWeapon = next;
+    if (weaponAmmo[currentWeapon] === undefined) weaponAmmo[currentWeapon] = WEAPONS[currentWeapon].maxAmmo;
+    updateUI();
+    playTone(800, 0.06, 'square', 0.02);
+}
+
+function startReload(){
+    const w = WEAPONS[currentWeapon];
+    if(isReloading || weaponAmmo[currentWeapon] >= w.maxAmmo || w.maxAmmo === Infinity) return;
+    isReloading = true;
+    reloadStartTime = Date.now();
+    document.getElementById('reload-msg').style.display = 'block';
+    reloadTimeout = setTimeout(() => { 
+        weaponAmmo[currentWeapon] = w.maxAmmo; 
+        isReloading = false; 
+        document.getElementById('reload-msg').style.display = 'none'; 
+        playTone(1200, 0.1, 'sine', 0.02);
+    }, w.reloadTime);
+}
+
+function cancelReload(){
+    isReloading = false;
+    clearTimeout(reloadTimeout);
+    document.getElementById('reload-msg').style.display = 'none';
+}
+
+function tryDash() {
+    if (abilityState.dash.cooldown > 0) return;
+    player.lunge = 38;
+    player.invuln = 30; 
+    abilityState.dash.cooldown = abilityState.dash.max;
+    playTone(600, 0.1, 'sine', 0.04);
+}
+
+function tryGrenade() {
+    if (abilityState.grenade.cooldown > 0) return;
+    const angle = Math.atan2(mousePos.y - player.y, mousePos.x - player.x);
+    attacks.push({ 
+        x: player.x, y: player.y, 
+        vx: Math.cos(angle) * 14, vy: Math.sin(angle) * 14, 
+        life: 55, damage: 0, type: 'GRENADE_LOB' 
+    });
+    abilityState.grenade.cooldown = abilityState.grenade.max;
+    playTone(200, 0.1, 'square', 0.03);
+}
+
+function tryUseAbility(){
+  if(abilityState.weaponAbility.cooldown > 0) return;
+  const w = WEAPONS[currentWeapon];
+  abilityState.weaponAbility.cooldown = w.cd || 8000;
+  
+  const angle = Math.atan2(mousePos.y - player.y, mousePos.x - player.x);
+
+  switch(currentWeapon) {
+    case 'P90':
+        abilityState.weaponAbility.active = true;
+        setTimeout(() => { abilityState.weaponAbility.active = false; }, 4000);
+        playTone(1200, 0.1, 'sawtooth', 0.04);
+        break;
+    case 'PISTOL':
+        for(let i=0; i<8; i++) {
+            const a = (i/8) * Math.PI * 2;
+            attacks.push({ x:player.x, y:player.y, vx:Math.cos(a)*25, vy:Math.sin(a)*25, life:40, damage:200, type:'PISTOL' });
+        }
+        playTone(400, 0.2, 'square', 0.05);
+        break;
+    case 'KNIFE':
+        attacks.push({ x:player.x, y:player.y, vx:0, vy:0, life:20, damage:1200, type:'MELEE', radius: 250 });
+        player.invuln = 20;
+        playTone(200, 0.1, 'sawtooth', 0.06);
+        break;
+    case 'BOW':
+        for(let i=0; i<15; i++) {
+            attacks.push({ x:Math.random()*canvas.width, y:-50, vx:0, vy:15+Math.random()*10, life:100, damage:800, type:'SNIPER' });
+        }
+        playTone(800, 0.3, 'sine', 0.04);
+        break;
+    case 'ENERGY':
+        attacks.push({ x:player.x, y:player.y, vx:0, vy:0, life:60, damage:15, type:'STATIC', radius: 300 });
+        playTone(1500, 0.5, 'sine', 0.02);
+        break;
+    case 'SHOTGUN':
+        player.lunge = 60;
+        attacks.push({ x:player.x, y:player.y, vx:Math.cos(angle)*10, vy:Math.sin(angle)*10, life:30, damage:100, type:'EXPLOSION' });
+        playTone(100, 0.2, 'sawtooth', 0.08);
+        break;
+    case 'REVOLVER':
+        abilityState.weaponAbility.active = true;
+        player.speed *= 1.5;
+        setTimeout(() => { abilityState.weaponAbility.active = false; }, 3000);
+        playTone(1000, 0.1, 'sine', 0.05);
+        break;
+    case 'CROSSBOW':
+        for(let i=-1; i<=1; i++) {
+            const a = angle + i*0.2;
+            attacks.push({ x:player.x, y:player.y, vx:Math.cos(a)*35, vy:Math.sin(a)*35, life:100, damage:400, type:'CROSSBOW' });
+        }
+        break;
+    case 'SNIPER':
+        attacks.push({ x:player.x, y:player.y, vx:Math.cos(angle)*70, vy:Math.sin(angle)*70, life:200, damage:8000, type:'SNIPER', pierce: 50 });
+        playTone(150, 0.4, 'sawtooth', 0.06);
+        break;
+    case 'FLAME':
+        for(let i=0; i<32; i++) {
+            const a = (i/32) * Math.PI * 2;
+            attacks.push({ x:player.x, y:player.y, vx:Math.cos(a)*8, vy:Math.sin(a)*8, life:50, damage:20, type:'FLAME' });
+        }
+        break;
+    case 'RAILGUN':
+        screenShake = 40;
+        attacks.push({ x:player.x, y:player.y, vx:Math.cos(angle)*100, vy:Math.sin(angle)*100, life:300, damage:20000, type:'SNIPER', pierce: 100 });
+        playTone(50, 0.8, 'sawtooth', 0.1);
+        break;
+    case 'KATANA':
+        player.lunge = 120;
+        player.invuln = 50;
+        attacks.push({ x:player.x, y:player.y, vx:0, vy:0, life:30, damage:5000, type:'MELEE', radius: 400 });
+        playTone(1200, 0.1, 'sine', 0.05);
+        break;
+    case 'MINIGUN':
+        abilityState.weaponAbility.active = true;
+        weaponAmmo[currentWeapon] = WEAPONS[currentWeapon].maxAmmo;
+        setTimeout(() => { abilityState.weaponAbility.active = false; }, 5000);
+        break;
+    case 'PLASMA':
+        attacks.push({ x:mousePos.x, y:mousePos.y, vx:0, vy:0, life:180, damage:10, type:'SINGULARITY', radius: 200 });
+        playTone(50, 1.0, 'sine', 0.05);
+        break;
+  }
+}
+
+/* enemy creation & spawn functions */
+function makeEnemy(x,y,isBoss=false,type='normal'){
+  const d = DIFF_SETTINGS[difficulty];
+  const levelScale = 1 + (currentLevelIdx * 0.25);
+  let radius = 20;
+  let speed = (1.6 + Math.random() * 1.6) * d.speedMult * levelScale;
+  let hp = 100 * d.hpMult * levelScale;
+  if(type === 'runner') { speed *= 2.3; hp *= 0.55; radius = 14; }
+  if(type === 'tank') { speed *= 0.55; hp *= 8.0; radius = 38; }
+  if(type === 'phantom') { speed *= 1.9; hp *= 0.75; radius = 18; }
+  if(type === 'bomber') { speed *= 2.0; hp *= 0.4; radius = 16; }
+  if(type === 'shooter') { speed *= 0.8; hp *= 1.2; radius = 22; }
+  if(type === 'splitter') { speed *= 0.9; hp *= 3.0; radius = 32; }
+  if(isBoss){
+    radius = (type==='mini'?65:(type==='mid'?95:(type==='harbinger'?115:(type==='final'?150:(type==='architect'?180:220)))));
+    hp = (type==='mini'?3500:(type==='mid'?12000:(type==='harbinger'?35000:(type==='final'?85000:(type==='architect'?150000:300000))))) * d.hpMult * d.bossMult;
+    speed = 1.2 * d.speedMult * levelScale;
+  }
+  return { x, y, isBoss, type, radius, speed, hp, maxHp: hp, lastShoot: 0 };
+}
+
+function spawnBoss(name,type){
+  bossActive = true;
+  levelBossSpawned = true;
+  bossName.innerText = name;
+  bossUi.style.display = 'block';
+  bossBar.style.width = '100%';
+  enemies.push(makeEnemy(canvas.width/2, -150, true, type));
+  showLevelBanner("BOSS: " + name);
+  playTone(120,0.2, 'sine', 0.06);
+}
+
+function showLevelBanner(text) {
+    levelBanner.innerText = text;
+    levelBanner.style.display = 'block';
+    setTimeout(() => { levelBanner.style.display = 'none'; }, 3000);
+}
+
+/* ---------------------------
+   CHEAT SYSTEM (extended)
+   --------------------------- */
+
+let cheats = {
+  godmode: false,
+  infAmmo: false,
+  noCooldowns: false,
+  speedMult: 1,
+  damageMult: 1,
+  killAura: false,
+  killAuraDPS: 800,
+  oneShot: false,
+  instantAbility: false,
+  infHealth: false,
+  infShield: false,
+  turret: false,
+  instantDrops: false,
+  slowmo: false,
+  timescale: 1,
+  freezeEnemies: false,
+  magnet: false,
+  ghost: false,
+  playerScale: 1,
+  enemySpeedMult: 1,
+  spawnRateMult: 1,
+  doubleXP: false
+};
+
+/* sync UI -> cheats */
+function syncCheats() {
+  cheats.godmode = !!document.getElementById("cheat-god").checked;
+  cheats.infAmmo = !!document.getElementById("cheat-ammo").checked;
+  cheats.noCooldowns = !!document.getElementById("cheat-nocd").checked;
+  cheats.killAura = !!document.getElementById("cheat-killaura").checked;
+  cheats.killAuraDPS = parseFloat(document.getElementById("killaura-dps").value) || 800;
+  cheats.oneShot = !!document.getElementById("cheat-oneshot").checked;
+  cheats.infHealth = !!document.getElementById("cheat-inf-health").checked;
+  cheats.infShield = !!document.getElementById("cheat-inf-shield").checked;
+  cheats.speedMult = document.getElementById("cheat-speed").checked ? (parseFloat(document.getElementById("speed-mult").value) || 2) : 1;
+  cheats.damageMult = document.getElementById("cheat-damage").checked ? (parseFloat(document.getElementById("damage-mult").value) || 3) : 1;
+  cheats.slowmo = !!document.getElementById("cheat-slowmo").checked;
+  cheats.timescale = parseFloat(document.getElementById("timescale").value) || 1;
+  cheats.freezeEnemies = !!document.getElementById("cheat-freeze-enemies").checked;
+  cheats.magnet = !!document.getElementById("cheat-magnet").checked;
+  cheats.ghost = !!document.getElementById("cheat-ghost").checked;
+  cheats.playerScale = parseFloat(document.getElementById("player-scale").value) || 1;
+  cheats.turret = !!document.getElementById("cheat-turret").checked;
+  cheats.instantDrops = !!document.getElementById("cheat-instant-drops").checked;
+  cheats.enemySpeedMult = parseFloat(document.getElementById("enemy-speed-mult").value) || 1;
+  cheats.spawnRateMult = parseFloat(document.getElementById("spawn-rate-mult").value) || 1;
+  cheats.doubleXP = !!document.getElementById("cheat-double-xp")?.checked || false;
+}
+
+/* apply cheats each frame (call from animate) */
+let turretFireTimer = 0;
+function applyCheats(dtFactor=1) {
+  syncCheats();
+
+  // health/shield
+  if (cheats.godmode || cheats.infHealth) {
+    player.hp = Math.max(player.hp, player.maxHP * 999999);
+  }
+  if (cheats.infShield) {
+    player.shield = Math.max(player.shield, (player.maxShield || 999999) * 999999);
+  }
+
+  // ammo & cooldowns
+  if (cheats.infAmmo) {
+    Object.keys(WEAPONS).forEach(k => {
+      if (WEAPONS[k].maxAmmo !== Infinity) weaponAmmo[k] = WEAPONS[k].maxAmmo;
+    });
+    isReloading = false;
+    document.getElementById('reload-msg').style.display = 'none';
+  }
+  if (cheats.noCooldowns) {
+    abilityState.dash.cooldown = 0;
+    abilityState.grenade.cooldown = 0;
+    abilityState.weaponAbility.cooldown = 0;
+  }
+  if (cheats.instantAbility) {
+    abilityState.weaponAbility.cooldown = 0;
+  }
+
+  // apply global multipliers
+  // enemy speed multiplier applied in animate where enemies move
+  // spawn rate multiplier applied in animate spawning logic
+
+  // kill aura
+  if (cheats.killAura) {
+    const radius = 260 * cheats.playerScale;
+    const dps = cheats.killAuraDPS;
+    const perFrame = dps * (dtFactor * 0.016); // approx per-frame
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const en = enemies[i];
+      const dist = Math.hypot(en.x - player.x, en.y - player.y);
+      if (dist <= radius) {
+        en.hp -= perFrame;
+        if (en.hp <= 0) {
+          handleEnemyDeath(i, en);
+        }
+      }
+    }
+  }
+
+  // magnet (pull enemies toward player)
+  if (cheats.magnet) {
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const en = enemies[i];
+      const dx = player.x - en.x;
+      const dy = player.y - en.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 0) {
+        const pull = Math.max(0, 4 - (d / 200)); // stronger when closer
+        en.x += (dx / d) * pull * (dtFactor * 1);
+        en.y += (dy / d) * pull * (dtFactor * 1);
+      }
+    }
+  }
+
+  // turret helpers auto-fire at nearest enemy
+  if (cheats.turret) {
+    turretFireTimer += dtFactor * 16;
+    if (turretFireTimer > 120) { // fire roughly every 120ms
+      turretFireTimer = 0;
+      if (enemies.length > 0) {
+        let nearest = enemies[0];
+        let nd = Math.hypot(nearest.x - player.x, nearest.y - player.y);
+        for (let i=1;i<enemies.length;i++){
+          const t = enemies[i];
+          const d = Math.hypot(t.x - player.x, t.y - player.y);
+          if (d < nd) { nd = d; nearest = t; }
+        }
+        const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+        attacks.push({ x: player.x + Math.cos(angle)*30, y: player.y + Math.sin(angle)*30, vx: Math.cos(angle)*30, vy: Math.sin(angle)*30, life:150, damage: 120 * (cheats.damageMult||1), type:'HELPER' });
+      }
+    }
+  }
+}
+
+/* helper: handle enemy death shared between kill aura and attack resolution */
+function handleEnemyDeath(index, en) {
+  combo++;
+  comboTimer = 200;
+  player.xp += (en.isBoss ? 1000 : 50) * (cheats.doubleXP ? 2 : 1);
+  if (player.xp >= player.nextXp) {
+    player.runLevel++;
+    player.xp = 0;
+    player.nextXp *= 1.2;
+    player.maxHP += 20;
+    player.hp = player.maxHP;
+    player.maxShield += 10;
+    showLevelBanner("RUN LEVEL UP: " + player.runLevel);
+    playTone(1500, 0.5, 'sine', 0.1);
+  }
+  if (combo > 0 && combo % 10 === 0) {
+    const bonus = combo * 5;
+    credits += bonus;
+    sessionEarned += bonus;
+    saveEconomy();
+    comboBonusMsg.innerText = `COMBO MILESTONE! +${bonus}`;
+    comboBonusMsg.style.opacity = 1;
+    setTimeout(() => { comboBonusMsg.style.opacity = 0; }, 1500);
+    playTone(1500, 0.1, 'sine', 0.05);
+  }
+  if (cheats.instantDrops || Math.random() < 0.25) {
+    drops.push({x:en.x, y:en.y, type: Math.random() < 0.7 ? 'health' : 'ammo'});
+  }
+  score += (en.isBoss ? 5000 : (en.type === 'tank' ? 400 : 120)) * Math.min(10, 1 + combo/5);
+  if (en.isBoss) {
+    bossActive=false;
+    bossUi.style.display='none';
+    screenShake = 30;
+    if(currentLevelIdx < LEVEL_DATA.length - 1) {
+      currentLevelIdx++;
+      currentWave = 1;
+      waveSpawnedCount = 0;
+      levelBossSpawned = false;
+      showLevelBanner("LEVEL " + LEVEL_DATA[currentLevelIdx].level + " - WAVE 1");
+      playTone(600, 0.5, 'sine', 0.05);
+    } else {
+      gameState='VICTORY';
+      const earned = calculatePayout();
+      document.getElementById('victory').style.display='block'; 
+      document.getElementById('victory-time').innerText = ((Date.now()-startTime)/1000).toFixed(2); 
+      document.getElementById('earned-credits-win').innerText = earned;
+    }
+  }
+  enemies.splice(index,1);
+}
+
+/* CHEAT UI helper functions exposed to buttons */
+function giveCredits(amount) {
+  credits += amount || 0;
+  saveEconomy();
+  updateMenuUI();
+  updateUI();
+  appendDevChat(`Gave ${amount} credits.`);
+  playTone(1500, 0.15);
+}
+
+function unlockEverything() {
+  unlockedWeapons = Object.keys(WEAPONS);
+  saveEconomy();
+  updateMenuUI();
+  populateCheatWeaponSelect();
+  appendDevChat("Unlocked all weapons.");
+  playTone(2000, 0.2);
+}
+
+function killAllEnemies() {
+  const num = enemies.length;
+  enemies.length = 0;
+  enemyAttacks.length = 0;
+  appendDevChat(`Killed all enemies (${num}).`);
+  playTone(250, 0.12);
+}
+
+function clearSaveData() {
+  localStorage.removeItem('yta_credits');
+  localStorage.removeItem('yta_unlocked');
+  localStorage.removeItem('yta_upgrades');
+  credits = 0;
+  unlockedWeapons = ['KNIFE'];
+  saveEconomy();
+  updateMenuUI();
+  populateCheatWeaponSelect();
+  appendDevChat("Cleared save data.");
+  playTone(800, 0.12);
+}
+
+function resetRun() {
+  gameState = 'MENU';
+  if (animationId) cancelAnimationFrame(animationId);
+  menu.style.display = 'block';
+  ui.style.display = 'none';
+  enemies.length = attacks.length = enemyAttacks.length = drops.length = damageTexts.length = 0;
+  bossActive = false; levelBossSpawned = false;
+  updateMenuUI();
+  appendDevChat("Run reset.");
+  playTone(400, 0.12);
+}
+
+function spawnEnemyAtPlayer() {
+  const t = document.getElementById('spawn-enemy-type').value;
+  const isBoss = ['mini','mid','final'].includes(t);
+  const x = player.x + (Math.random()-0.5)*100;
+  const y = player.y + (Math.random()-0.5)*100;
+  enemies.push(makeEnemy(x, y, isBoss, t));
+  appendDevChat(`Spawned ${t} at player.`);
+  playTone(500, 0.08);
+}
+
+function giveWeapon(key) {
+  if (!key) return;
+  if (!unlockedWeapons.includes(key)) unlockedWeapons.push(key);
+  weaponAmmo[key] = WEAPONS[key].maxAmmo;
+  saveEconomy();
+  updateMenuUI();
+  appendDevChat(`Gave weapon: ${WEAPONS[key].name}`);
+  playTone(1200, 0.12);
+}
+
+function spawnWave() {
+  const count = parseInt(document.getElementById('spawn-wave-count').value) || 10;
+  const type = document.getElementById('spawn-enemy-type').value;
+  for (let i=0;i<count;i++){
+    let rx, ry;
+    if (Math.random() < 0.5) rx = (Math.random() < 0.5 ? -60 : canvas.width + 60);
+    else ry = (Math.random() < 0.5 ? -60 : canvas.height + 60);
+    if (!ry) ry = Math.random()*canvas.height;
+    if (!rx) rx = Math.random()*canvas.width;
+    enemies.push(makeEnemy(rx, ry, ['mini','mid','final'].includes(type), type));
+  }
+  appendDevChat(`Spawned wave: ${count} x ${type}`);
+  playTone(600, 0.12);
+}
+
+let enemyAIDisabled = false;
+function disableEnemyAI() {
+  enemyAIDisabled = !enemyAIDisabled;
+  document.getElementById('cheat-freeze-enemies').checked = enemyAIDisabled;
+  syncCheats();
+  appendDevChat(`Enemy AI ${enemyAIDisabled ? 'disabled' : 'enabled'}`);
+  playTone(enemyAIDisabled ? 1200 : 400, 0.12);
+}
+
+/* small utilities */
+function teleportToCursor() { player.x = mousePos.x; player.y = mousePos.y; appendDevChat('Teleported to cursor.'); playTone(900,0.08); }
+function superJump() { player.lunge = 200; player.invuln = 30; appendDevChat('Super jump!'); playTone(1000,0.08); }
+
+/* populate cheat weapon select on load */
+function populateCheatWeaponSelect() {
+  const select = document.getElementById('give-weapon-select');
+  select.innerHTML = '';
+  Object.keys(WEAPONS).forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.innerText = WEAPONS[k].name + (unlockedWeapons.includes(k) ? '' : ` (${WEAPONS[k].price})`);
+    select.appendChild(opt);
+  });
+}
+populateCheatWeaponSelect();
+
+/* Dev chat helpers (console-like) */
+function appendDevChat(msg) {
+  const time = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.innerText = `[${time}] ${msg}`;
+  devChatLog.appendChild(div);
+  devChatLog.scrollTop = devChatLog.scrollHeight;
+}
+
+function sendDevChat() {
+  const txt = devChatInput.value.trim();
+  if(!txt) return;
+  appendDevChat(`YOU: ${txt}`);
+  devChatInput.value = '';
+  if (txt.startsWith('/')) {
+    handleDevCommand(txt.slice(1).trim());
+  } else {
+    // general dev chat (no multiplayer, so just log)
+    appendDevChat(`DEVMSG stored: "${txt}"`);
+  }
+}
+
+/* parse & execute dev commands */
+function handleDevCommand(cmd) {
+  const parts = cmd.split(/\s+/);
+  const c = parts[0].toLowerCase();
+  try {
+    if (c === 'spawn') {
+      if (parts[1] === 'wave') {
+        const n = parseInt(parts[2]) || 10;
+        document.getElementById('spawn-wave-count').value = n;
+        spawnWave();
+      } else {
+        const type = parts[1] || 'normal';
+        enemies.push(makeEnemy(player.x + 50, player.y + 50, ['mini','mid','final'].includes(type), type));
+        appendDevChat(`Command: spawned ${type}`);
+      }
+    } else if (c === 'setcredits') {
+      const amt = parseInt(parts[1]) || 0; credits = amt; saveEconomy(); updateMenuUI(); appendDevChat(`Credits set to ${amt}`);
+    } else if (c === 'give') {
+      const key = parts[1] ? parts[1].toUpperCase() : null;
+      if(key && WEAPONS[key]) { giveWeapon(key); appendDevChat(`Command: gave ${WEAPONS[key].name}`); }
+      else appendDevChat('Command: unknown weapon');
+    } else if (c === 'kill') {
+      if (parts[1] === 'all') { killAllEnemies(); }
+    } else if (c === 'setdiff') {
+      const d = parts[1] || 'norm'; setDiff(d); appendDevChat(`Difficulty set to ${d}`);
+    } else if (c === 'teleport') {
+      const x = parseFloat(parts[1]) || player.x; const y = parseFloat(parts[2]) || player.y;
+      player.x = x; player.y = y; appendDevChat(`Teleported to ${x},${y}`);
+    } else if (c === 'god') {
+      document.getElementById('cheat-god').checked = !document.getElementById('cheat-god').checked; syncCheats(); appendDevChat('Toggled godmode');
+    } else if (c === 'slowmo') {
+      const v = parseFloat(parts[1]) || 0.5; document.getElementById('timescale').value = v; document.getElementById('cheat-slowmo').checked = true; syncCheats(); appendDevChat(`Slow-mo set to ${v}`);
+    } else {
+      appendDevChat(`Unknown command: ${c}`);
+    }
+  } catch(e) {
+    appendDevChat('Command error: ' + e.message);
+  }
+}
+
+/* ---------------------------
+   MAIN ANIMATE (modified to handle new cheats)
+   --------------------------- */
+
+function ensurePlayerExists(){
+  if (!isFinite(player.x) || !isFinite(player.y) || player.x === 0 && player.y === 0) {
+    player.x = canvas.width/2 || 400;
+    player.y = canvas.height/2 || 300;
+    player.radius = 18;
+    player.hp = player.hp || player.maxHP || 100;
+    player.maxHP = player.maxHP || 100;
+    player.maxShield = player.maxShield || 50;
+  }
+}
+
+function animate(){
+  if(gameState !== 'PLAYING') return;
+
+  ensurePlayerExists();
+
+  syncCheats();
+  const dtFactor = cheats.slowmo ? cheats.timescale : 1;
+  if (screenShake > 0) {
+      const shakeMag = screenShake * (SETTINGS.shake / 100);
+      ctx.setTransform(1,0,0,1, (Math.random()-0.5)*shakeMag, (Math.random()-0.5)*shakeMag);
+      screenShake *= 0.9;
+  } else {
+      ctx.setTransform(1,0,0,1,0,0);
+  }
+  ctx.fillStyle = 'rgba(5,5,5,0.45)';
+  ctx.fillRect(-100, -100, canvas.width+200, canvas.height+200);
+  const now = Date.now();
+  if(SETTINGS.timer) timerEl.innerText = ((now - startTime)/1000).toFixed(2);
+  
+  const cdDec = Math.max(0, 16 * dtFactor);
+  abilityState.dash.cooldown = Math.max(0, abilityState.dash.cooldown - cdDec);
+  abilityState.grenade.cooldown = Math.max(0, abilityState.grenade.cooldown - cdDec);
+  abilityState.weaponAbility.cooldown = Math.max(0, abilityState.weaponAbility.cooldown - cdDec);
+  
+  if (comboTimer > 0) comboTimer -= (1 * dtFactor); else combo = 0;
+  
+  if (frame % Math.max(1, Math.floor(60 * (1/dtFactor))) === 0 && player.shield < player.maxShield) {
+      player.shield = Math.min(player.maxShield, player.shield + 1);
+  }
+
+  applyCheats(dtFactor);
+
+  updateUI();
+  
+  let moveMult = WEAPONS[currentWeapon].moveSlow || 1.0;
+  moveMult *= (cheats.speedMult || 1);
+  player.speed = 5.5 * DIFF_SETTINGS[difficulty].speedMult * moveMult;
+  player.speed *= cheats.enemySpeedMult ? 1 : 1; // enemySpeedMult applied later to enemies
+  if (player.invuln > 0) player.invuln -= Math.max(0, 1 * dtFactor);
+  
+  player.radius = 18 * (cheats.playerScale || 1);
+
+  let vx=0, vy=0;
+  if(keys['w']) vy -= 1;
+  if(keys['s']) vy += 1;
+  if(keys['a']) vx -= 1;
+  if(keys['d']) vx += 1;
+  let mag = Math.hypot(vx, vy);
+  if (mag > 0) {
+      vx = (vx / mag) * (player.speed + player.lunge) * dtFactor;
+      vy = (vy / mag) * (player.speed + player.lunge) * dtFactor;
+  }
+  player.x += vx; player.y += vy;
+  player.lunge *= 0.88;
+  player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+  player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+
+  if(isReloading && SETTINGS.crosshair) {
+      const w = WEAPONS[currentWeapon];
+      const elapsed = now - reloadStartTime;
+      const pct = Math.min(1, elapsed / w.reloadTime);
+      ctx.strokeStyle = '#ffcc00';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(mousePos.x, mousePos.y, SETTINGS.crossSize * 0.7, -Math.PI/2, (-Math.PI/2) + (Math.PI*2*pct));
+      ctx.stroke();
+  }
+
+  for(let i=drops.length-1; i>=0; i--){
+      const d = drops[i];
+      ctx.fillStyle = d.type === 'health' ? '#ff4d4d' : '#00ffff';
+      ctx.fillRect(d.x-10, d.y-10, 20, 20);
+      if(Math.hypot(player.x - d.x, player.y - d.y) < player.radius + 15){
+          if(d.type === 'health') player.hp = Math.min(player.maxHP, player.hp + 35);
+          else weaponAmmo[currentWeapon] = Math.min(WEAPONS[currentWeapon].maxAmmo, (weaponAmmo[currentWeapon]||0) + (WEAPONS[currentWeapon].maxAmmo * 0.4));
+          playTone(1000, 0.1, 'sine', 0.05);
+          drops.splice(i, 1);
+      }
+  }
+
+  // Draw Player
+  ctx.fillStyle = player.invuln > 0 ? (frame % 4 < 2 ? '#ECFF0C' : '#fff') : '#fff';
+  ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI*2); ctx.fill();
+  
+  // Shield Visual
+  if (player.shield > 0) {
+      ctx.strokeStyle = `rgba(0, 204, 255, ${0.3 + Math.sin(frame/5)*0.2})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(player.x, player.y, player.radius + 5, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // HELPERS: draw turret helper visually (simple)
+  if (cheats.turret) {
+    ctx.fillStyle = '#00ffaa';
+    ctx.beginPath();
+    ctx.arc(player.x + 40, player.y - 40, 8, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  /* enemies movement & drawing */
+  for (let i = enemies.length-1; i >= 0; i--) {
+    const en = enemies[i];
+    const ang = Math.atan2(player.y - en.y, player.x - en.x);
+    
+    // If freeze or disable AI, skip movement/shooting
+    if (!cheats.freezeEnemies && !enemyAIDisabled) {
+        const enemySpeed = (en.speed || 1) * (cheats.enemySpeedMult || 1);
+        if (en.type === 'shooter') {
+            const dist = Math.hypot(player.x - en.x, player.y - en.y);
+            if (dist > 350) {
+                en.x += Math.cos(ang) * enemySpeed * dtFactor;
+                en.y += Math.sin(ang) * enemySpeed * dtFactor;
+            } else if (dist < 250) {
+                en.x -= Math.cos(ang) * enemySpeed * dtFactor;
+                en.y -= Math.sin(ang) * enemySpeed * dtFactor;
+            }
+            if (Date.now() - en.lastShoot > 2000 * (1 / dtFactor)) {
+                enemyAttacks.push({ x: en.x, y: en.y, vx: Math.cos(ang)*8, vy: Math.sin(ang)*8, life: 100 });
+                en.lastShoot = Date.now();
+            }
+        } else {
+            en.x += Math.cos(ang) * enemySpeed * dtFactor;
+            en.y += Math.sin(ang) * enemySpeed * dtFactor;
+        }
+    } // else: frozen/stopped
+
+    ctx.save();
+    if(en.type === 'phantom') ctx.globalAlpha = 0.3 + Math.sin(frame/10)*0.2;
+    ctx.fillStyle = en.isBoss ? '#ff0044' : (en.type === 'runner' ? '#ecff0c' : (en.type === 'tank' ? '#555' : (en.type === 'bomber' ? '#ff0000' : '#ff8800')));
+    ctx.beginPath(); ctx.arc(en.x, en.y, en.radius, 0, Math.PI*2); ctx.fill();
+    
+    if(SETTINGS.showEnemyHP && en.hp < en.maxHp && !en.isBoss) {
+        const hpP = en.hp / en.maxHp;
+        ctx.fillStyle = '#222'; ctx.fillRect(en.x - 15, en.y - en.radius - 8, 30, 4);
+        ctx.fillStyle = '#ff4444'; ctx.fillRect(en.x - 15, en.y - en.radius - 8, 30 * hpP, 4);
+    }
+    ctx.restore();
+
+    const distToPlayer = Math.hypot(en.x - player.x, en.y - player.y);
+    // Collision: skip if ghost active
+    if(!cheats.ghost && player.invuln <= 0 && distToPlayer < player.radius + en.radius - 5){
+      let dmg = (en.isBoss ? 1.5 : (en.type === 'tank' ? 0.8 : 0.5));
+      if (en.type === 'bomber') { dmg = 25; enemies.splice(i, 1); playTone(100, 0.2, 'sawtooth', 0.05); screenShake = 15; }
+      
+      if (player.shield > 0) {
+          player.shield -= dmg;
+          if (player.shield < 0) player.shield = 0;
+      } else {
+          player.hp -= dmg;
+      }
+
+      if(player.hp <= 0) {
+          gameState = 'GAMEOVER';
+          const earned = calculatePayout();
+          document.getElementById('game-over').style.display='block';
+          document.getElementById('final-score').innerText = Math.floor(score);
+          document.getElementById('earned-credits-death').innerText = earned;
+          appendDevChat('Player died. Run ended.');
+          break;
+      }
+    }
+  }
+
+  /* enemy projectiles */
+  for (let i = enemyAttacks.length-1; i >= 0; i--) {
+      const ea = enemyAttacks[i];
+      ea.x += ea.vx * dtFactor; ea.y += ea.vy * dtFactor; ea.life--;
+      ctx.fillStyle = '#ff00ff';
+      ctx.beginPath(); ctx.arc(ea.x, ea.y, 6, 0, Math.PI*2); ctx.fill();
+      if (!cheats.ghost && player.invuln <= 0 && Math.hypot(ea.x - player.x, ea.y - player.y) < player.radius + 6) {
+          if (player.shield > 0) player.shield -= 10; else player.hp -= 10;
+          enemyAttacks.splice(i, 1);
+      } else if (ea.life <= 0) enemyAttacks.splice(i, 1);
+  }
+
+  /* damage numbers */
+  if(SETTINGS.damageNumbers) {
+      for(let i=damageTexts.length-1; i>=0; i--) {
+          const dt = damageTexts[i];
+          ctx.fillStyle = `rgba(255,255,255,${dt.life/30})`;
+          ctx.font = 'bold 14px Courier New';
+          ctx.fillText(dt.text, dt.x, dt.y);
+          dt.y -= 0.8; dt.life--;
+          if(dt.life <= 0) damageTexts.splice(i, 1);
+      }
+  }
+
+  /* wave spawn (spawn rate affected by spawnRateMult cheat) */
+  const currentLevel = LEVEL_DATA[currentLevelIdx];
+  // apply spawn-rate multiplier
+  let spawnRateBase = Math.max(15, DIFF_SETTINGS[difficulty].spawnRate - (currentLevelIdx * 10));
+  spawnRateBase = Math.max(3, spawnRateBase / (cheats.spawnRateMult || 1));
+  if(!bossActive && !levelBossSpawned) {
+      if (currentWave <= currentLevel.waves) {
+          if (waveSpawnedCount < currentLevel.enemiesPerWave) {
+              if (frame % Math.max(1, Math.floor(spawnRateBase / (1.5 * dtFactor))) === 0) {
+                  let rx, ry;
+                  do {
+                      rx = Math.random() * canvas.width;
+                      ry = Math.random() * canvas.height;
+                      if(Math.random() < 0.5) rx = (Math.random() < 0.5 ? -60 : canvas.width + 60);
+                      else ry = (Math.random() < 0.5 ? -60 : canvas.height + 60);
+                  } while (Math.hypot(rx - player.x, ry - player.y) < 300);
+                  const type = currentLevel.enemies[Math.floor(Math.random() * currentLevel.enemies.length)];
+                  const e = makeEnemy(rx, ry, false, type);
+                  // apply enemy speed multiplier cheat
+                  e.speed *= (cheats.enemySpeedMult || 1);
+                  enemies.push(e);
+                  waveSpawnedCount++;
+              }
+          } else if (enemies.length === 0) {
+              currentWave++;
+              waveSpawnedCount = 0;
+              if (currentWave <= currentLevel.waves) {
+                  showLevelBanner("WAVE " + currentWave);
+                  playTone(500, 0.2, 'sine', 0.04);
+              }
+          }
+      } else {
+          spawnBoss(currentLevel.bossName, currentLevel.bossType);
+      }
+  }
+
+  if(SETTINGS.autoReload && !isReloading && weaponAmmo[currentWeapon] <= 0 && WEAPONS[currentWeapon].maxAmmo !== Infinity) {
+      startReload();
+  }
+
+  /* shooting handling (modified to include damage mult & overpowered mag) */
+  if(isShooting && !isReloading){
+    const w = WEAPONS[currentWeapon];
+    const rate = abilityState.weaponAbility.active ? w.fireRate * 0.4 : w.fireRate;
+    if(Date.now() - lastAttack > rate * (1 / (cheats.slowmo ? cheats.timescale : 1))){
+      if (weaponAmmo[currentWeapon] > 0 || w.maxAmmo === Infinity) {
+          const angle = Math.atan2(mousePos.y - player.y, mousePos.x - player.x);
+          if(w.isMelee) {
+              const dmg = (cheats.oneShot ? 9999999 : w.damage * (cheats.damageMult || 1));
+              attacks.push({ x:player.x + Math.cos(angle)*30, y:player.y + Math.sin(angle)*30, vx:Math.cos(angle)*w.speed * (cheats.speedMult||1), vy:Math.sin(angle)*w.speed * (cheats.speedMult||1), life:w.life * (cheats.slowmo ? cheats.timescale : 1), damage:dmg, type:'MELEE', radius: w.radius || 55 });
+          } else if(currentWeapon === 'SHOTGUN'){
+              for(let p=0; p<w.pellets; p++){
+                  const sAng = angle + (Math.random()-0.5)*w.spread;
+                  const dmg = (cheats.oneShot ? 9999999 : w.damage * (cheats.damageMult || 1));
+                  attacks.push({ x:player.x, y:player.y, vx:Math.cos(sAng)*w.speed, vy:Math.sin(sAng)*w.speed, life:45, damage:dmg, type:'SHOTGUN' });
+              }
+          } else if(w.isPlasma){
+              attacks.push({ x:player.x, y:player.y, vx:Math.cos(angle)*w.speed, vy:Math.sin(angle)*w.speed, life:100, damage:w.damage * (cheats.damageMult || 1), type:'PLASMA' });
+          } else if(currentWeapon === 'FLAME'){
+              attacks.push({ x:player.x, y:player.y, vx:Math.cos(angle)*w.speed + (Math.random()-0.5)*4, vy:Math.sin(angle)*w.speed + (Math.random()-0.5)*4, life:28, damage:w.damage * (cheats.damageMult || 1), type:'FLAME' });
+          } else {
+              const dmgbase = (cheats.oneShot ? 9999999 : w.damage * (cheats.damageMult || 1));
+              attacks.push({ x:player.x, y:player.y, vx:Math.cos(angle)*w.speed, vy:Math.sin(angle)*w.speed, life:150, damage:dmgbase, type:currentWeapon, pierce: w.pierce || 0 });
+          }
+          if (w.maxAmmo !== Infinity && !cheats.infAmmo) weaponAmmo[currentWeapon]--;
+          lastAttack = Date.now();
+          playTone(currentWeapon === 'SNIPER' || currentWeapon === 'RAILGUN' ? 180 : 1000, 0.03, 'sine', 0.01);
+      }
+    }
+  }
+
+  /* attacks resolution (modified for cheats) */
+  for(let i=attacks.length-1;i>=0;i--){
+    const a = attacks[i]; a.x += a.vx * (cheats.slowmo ? cheats.timescale : 1); a.y += a.vy * (cheats.slowmo ? cheats.timescale : 1); a.life--;
+    
+    if(a.type === 'SINGULARITY') {
+        enemies.forEach(en => {
+            const d = Math.hypot(a.x - en.x, a.y - en.y);
+            if(d < a.radius) {
+                en.x += (a.x - en.x) * 0.05;
+                en.y += (a.y - en.y) * 0.05;
+                en.hp -= a.damage;
+            }
+        });
+    }
+
+    if(a.life <= 0) {
+        if (a.type === 'GRENADE_LOB') {
+            screenShake = 10;
+            for(let e=0; e<24; e++){
+                const ang = (e/24) * Math.PI * 2;
+                attacks.push({ x:a.x, y:a.y, vx:Math.cos(ang)*6, vy:Math.sin(ang)*6, life:25, damage:500, type:'EXPLOSION' });
+            }
+            playTone(80, 0.3, 'sawtooth', 0.06);
+        }
+        attacks.splice(i, 1); continue; 
+    }
+
+    // Render Attacks (unchanged visuals)
+    if(a.type === 'FLAME') {
+        ctx.fillStyle = `rgba(255, ${Math.random()*200}, 0, ${a.life/25})`;
+        ctx.beginPath(); ctx.arc(a.x, a.y, 10 + (25-a.life), 0, Math.PI*2); ctx.fill();
+    } else if (a.type === 'SINGULARITY') {
+        ctx.fillStyle = `rgba(100, 0, 255, ${0.2 + Math.random()*0.3})`;
+        ctx.beginPath(); ctx.arc(a.x, a.y, a.radius * (1 - a.life/180), 0, Math.PI*2); ctx.fill();
+    } else if (a.type === 'STATIC') {
+        ctx.strokeStyle = `rgba(0, 255, 255, ${a.life/60})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(a.x, a.y, a.radius, 0, Math.PI*2); ctx.stroke();
+        enemies.forEach(en => {
+            if(Math.hypot(a.x - en.x, a.y - en.y) < a.radius) en.hp -= a.damage;
+        });
+    } else if (a.type === 'EXPLOSION') {
+        ctx.fillStyle = `rgba(255, 120, 0, ${a.life/25})`;
+        ctx.beginPath(); ctx.arc(a.x, a.y, 70 - a.life*2, 0, Math.PI*2); ctx.fill();
+    } else if (a.type === 'MELEE') {
+        ctx.fillStyle = `rgba(255,255,255,${a.life/20})`;
+        ctx.beginPath(); ctx.arc(a.x, a.y, a.radius, 0, Math.PI*2); ctx.fill();
+    } else {
+        ctx.fillStyle = (a.type === 'SNIPER' || a.type === 'RAILGUN') ? '#00ffff' : '#fff';
+        ctx.beginPath(); ctx.arc(a.x, a.y, (a.type === 'SNIPER' || a.type === 'RAILGUN') ? 7 : 4, 0, Math.PI*2); ctx.fill();
+    }
+
+    for(let j=enemies.length-1;j>=0;j--){
+      const en = enemies[j];
+      const dist = Math.hypot(a.x - en.x, a.y - en.y);
+      const hitRadius = a.type === 'EXPLOSION' ? 70 : (a.type === 'MELEE' ? a.radius : (a.type === 'PLASMA' ? 25 : (a.type === 'SINGULARITY' ? 0 : 15)));
+      
+      if(dist < en.radius + hitRadius){
+        if (a.type === 'GRENADE_LOB' || a.type === 'SINGULARITY' || a.type === 'STATIC') continue; 
+        
+        // Apply cheat multipliers & one-shot
+        if (cheats.oneShot) {
+          en.hp = -9999;
+        } else {
+          let finalDmg = (a.damage || 0) * (cheats.damageMult || 1);
+          if (Math.random() < 0.1) { finalDmg *= 2; if(SETTINGS.damageNumbers) damageTexts.push({x:en.x, y:en.y-20, text:"CRIT!", life:40}); }
+          en.hp -= finalDmg;
+          if(SETTINGS.damageNumbers) damageTexts.push({x: en.x, y: en.y, text: Math.floor(finalDmg), life: 30});
+        }
+
+        if(a.pierce > 0) { a.pierce--; } 
+        else if(a.type !== 'FLAME' && a.type !== 'EXPLOSION' && a.type !== 'MELEE' && a.type !== 'PLASMA') { attacks.splice(i, 1); }
+        
+        if(en.hp <= 0){
+            handleEnemyDeath(j, en);
+            playTone(2000, 0.02, 'sine', 0.01);
+        } else if(en.isBoss) {
+            bossBar.style.width = (en.hp/en.maxHp*100)+'%';
+        }
+        break;
+      }
+    }
+  }
+
+  frame++;
+  animationId = requestAnimationFrame(animate);
+}
+
+/* startGame + lifecycle (ensures player exists) */
+function startGame(mode){
+  if (!mode) mode = 'P90';
+  if (animationId) cancelAnimationFrame(animationId);
+  currentMode = mode; currentWeapon = mode;
+  weaponAmmo = {}; 
+  Object.keys(WEAPONS).forEach(k => weaponAmmo[k] = WEAPONS[k].maxAmmo);
+  
+  player.maxHP = 100 * DIFF_SETTINGS[difficulty].hpMult;
+  player.hp = player.maxHP;
+  player.maxShield = 50;
+  player.shield = 50;
+  player.xp = 0;
+  player.nextXp = 1000;
+  player.runLevel = 1;
+
+  resize();
+  player.x = canvas.width/2; player.y = canvas.height/2;
+  player.invuln = 0; player.lunge = 0;
+  score = 0; combo = 0; comboTimer = 0;
+  sessionEarned = 0;
+  currentLevelIdx = 0;
+  currentWave = 1;
+  waveSpawnedCount = 0;
+  levelBossSpawned = false;
+  startTime = Date.now(); gameState = 'PLAYING';
+  menu.style.display = 'none'; ui.style.display = 'block';
+  bossActive=false;
+  enemies.length=0; attacks.length=0; enemyAttacks.length=0; drops.length=0; damageTexts.length=0;
+  applyTheme(SETTINGS.theme);
+  applySettings(); 
+  showLevelBanner("LEVEL 1 - WAVE 1");
+  animate();
+}
+
+/* UI helper exposures & init */
+updateMenuUI();
+window.startGame = startGame;
+window.handleWeaponClick = handleWeaponClick;
+window.setDiff = setDiff;
+window.openSettings = openSettings;
+window.applySettings = applySettings;
+window.leaveRun = leaveRun;
+window.giveCredits = giveCredits;
+window.unlockEverything = unlockEverything;
+window.killAllEnemies = killAllEnemies;
+window.clearSaveData = clearSaveData;
+window.resetRun = resetRun;
+window.spawnEnemyAtPlayer = spawnEnemyAtPlayer;
+window.spawnBossNow = () => spawnBoss(LEVEL_DATA[currentLevelIdx].bossName, LEVEL_DATA[currentLevelIdx].bossType);
+window.giveWeapon = giveWeapon;
+window.populateCheatWeaponSelect = populateCheatWeaponSelect;
+
+/* small helpers exposed previously but maybe not present in scope */
+function openSettings(){ 
+  document.getElementById('bg-select').value = SETTINGS.theme;
+  document.getElementById('volume-slider').value = SETTINGS.volume;
+  document.getElementById('shake-slider').value = SETTINGS.shake;
+  document.getElementById('crosshair-color').value = SETTINGS.crossColor;
+  document.getElementById('crosshair-size').value = SETTINGS.crossSize;
+  document.getElementById('ui-scale').value = SETTINGS.uiScale;
+  document.getElementById('crosshair-toggle').checked = SETTINGS.crosshair;
+  document.getElementById('timer-toggle').checked = SETTINGS.timer;
+  document.getElementById('hp-toggle').checked = SETTINGS.showHP;
+  document.getElementById('enemy-hp-toggle').checked = SETTINGS.showEnemyHP;
+  document.getElementById('auto-reload-toggle').checked = SETTINGS.autoReload;
+  document.getElementById('damage-numbers-toggle').checked = SETTINGS.damageNumbers;
+  settingsEl.style.display = 'block'; 
+}
+
+function closeSettings(){ settingsEl.style.display = 'none'; }
+
+function applySettings(){
+  SETTINGS.theme = document.getElementById('bg-select').value;
+  SETTINGS.volume = parseInt(document.getElementById('volume-slider').value);
+  SETTINGS.shake = parseInt(document.getElementById('shake-slider').value);
+  SETTINGS.crossColor = document.getElementById('crosshair-color').value;
+  SETTINGS.crossSize = parseInt(document.getElementById('crosshair-size').value);
+  SETTINGS.uiScale = parseInt(document.getElementById('ui-scale').value);
+  SETTINGS.crosshair = document.getElementById('crosshair-toggle').checked;
+  SETTINGS.timer = document.getElementById('timer-toggle').checked;
+  SETTINGS.showHP = document.getElementById('hp-toggle').checked;
+  SETTINGS.showEnemyHP = document.getElementById('enemy-hp-toggle').checked;
+  SETTINGS.autoReload = document.getElementById('auto-reload-toggle').checked;
+  SETTINGS.damageNumbers = document.getElementById('damage-numbers-toggle').checked;
+  
+  localStorage.setItem('yta_theme', SETTINGS.theme);
+  localStorage.setItem('yta_vol', SETTINGS.volume);
+  localStorage.setItem('yta_shake', SETTINGS.shake);
+  localStorage.setItem('yta_cross_color', SETTINGS.crossColor);
+  localStorage.setItem('yta_cross_size', SETTINGS.crossSize);
+  localStorage.setItem('yta_ui_scale', SETTINGS.uiScale);
+  localStorage.setItem('yta_cross', SETTINGS.crosshair);
+  localStorage.setItem('yta_timer', SETTINGS.timer);
+  localStorage.setItem('yta_hp', SETTINGS.showHP);
+  localStorage.setItem('yta_enemy_hp', SETTINGS.showEnemyHP);
+  localStorage.setItem('yta_auto_reload', SETTINGS.autoReload);
+  localStorage.setItem('yta_dmg_nums', SETTINGS.damageNumbers);
+  
+  applyTheme(SETTINGS.theme);
+  const cross = document.getElementById('crosshair');
+  cross.style.display = SETTINGS.crosshair ? 'block' : 'none';
+  cross.style.borderColor = SETTINGS.crossColor;
+  cross.style.width = SETTINGS.crossSize + 'px';
+  cross.style.height = SETTINGS.crossSize + 'px';
+  timerEl.style.display = SETTINGS.timer ? 'block' : 'none';
+  document.getElementById('player-hp').style.display = SETTINGS.showHP ? 'block' : 'none';
+  document.getElementById('ui').style.transform = `scale(${SETTINGS.uiScale/100})`;
+  document.getElementById('ui').style.transformOrigin = 'top left';
+  closeSettings();
+}
+
+function applyTheme(name){
+  if(name === 'space') document.body.style.background = "radial-gradient(circle at 20% 20%, #0b1222, #000)";
+  else if(name === 'grid') document.body.style.background = "linear-gradient(#060606,#050505), repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 40px)";
+  else if(name === 'neon') document.body.style.background = "linear-gradient(#050515,#0b0012), radial-gradient(circle at 60% 30%, rgba(0,255,255,0.03), transparent)";
+  else if(name === 'sunset') document.body.style.background = "linear-gradient(180deg,#2a1a3a 0%, #ff8c56 60%)";
+  else document.body.style.background = "#050505";
+}
+
+function updateUI(){
+  const currentLevel = LEVEL_DATA[currentLevelIdx] || { level: 1, waves: 1 };
+  document.getElementById('mode-display').innerText = currentWeapon;
+  levelDisplay.innerText = "LVL " + currentLevel.level + (bossActive ? " [BOSS]" : " - WAVE " + currentWave + "/" + (currentLevel.waves || 1));
+  
+  const w = WEAPONS[currentWeapon] || WEAPONS['P90'];
+  const curAmmo = weaponAmmo[currentWeapon];
+  ammoEl.innerText = (w.maxAmmo === Infinity ? '∞' : Math.floor(curAmmo || 0));
+  ammoMaxEl.innerText = (w.maxAmmo === Infinity ? '∞' : w.maxAmmo);
+  scoreEl.innerText = Math.floor(score);
+  hudCreditsEl.innerText = credits;
+  document.getElementById('run-lvl').innerText = player.runLevel;
+  
+  const hpPct = Math.max(0, Math.min(1, player.hp / player.maxHP));
+  hpFill.style.width = (hpPct*100) + '%';
+  hpText.innerText = Math.ceil(player.hp) + '/' + Math.ceil(player.maxHP);
+
+  const shPct = Math.max(0, Math.min(1, player.shield / player.maxShield));
+  shieldFill.style.width = (shPct*100) + '%';
+
+  const xpPct = (player.xp / player.nextXp) * 100;
+  xpFill.style.width = xpPct + '%';
+  
+  const abilityInfo = WEAPONS[currentWeapon] || {};
+  document.getElementById('skill-name').innerText = abilityInfo.ability || "NONE";
+  abilityState.weaponAbility.max = abilityInfo.cd || 8000;
+
+  const apc = 1 - Math.max(0, abilityState.weaponAbility.cooldown) / abilityState.weaponAbility.max;
+  document.getElementById('cd-ability').style.width = (apc*100) + '%';
+  const dpc = 1 - Math.max(0, abilityState.dash.cooldown) / abilityState.dash.max;
+  document.getElementById('cd-dash').style.width = (dpc*100) + '%';
+  const gpc = 1 - Math.max(0, abilityState.grenade.cooldown) / abilityState.grenade.max;
+  document.getElementById('cd-grenade').style.width = (gpc*100) + '%';
+
+  if (combo > 1) {
+    comboUi.style.display = 'block';
+    comboCountEl.innerText = combo;
+  } else {
+    comboUi.style.display = 'none';
+  }
+
+  const sec = (WEAPONS[currentWeapon] && WEAPONS[currentWeapon].secondary) || (currentWeapon === 'KNIFE' ? 'Pistol' : 'N/A');
+  document.getElementById('secondary-text').innerText = sec;
+}
+
+/* initial UI apply */
+applyTheme(SETTINGS.theme);
+updateMenuUI();
+populateCheatWeaponSelect();
+appendDevChat("HAX ready. Press H to open cheat menu.");
+</script>
+</body>
+</html>
